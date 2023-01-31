@@ -1,0 +1,302 @@
+
+public without sharing class B2B_MyAddressSelectorFlowController {
+   
+            @AuraEnabled(cacheable=true)
+            public static List<ContactPointAddress> getShipToAddress(){
+                try {
+                    //String userid = UserInfo.getUserId();
+                    User myUser=[Select Id,name,accountId  from user Where Id=:UserInfo.getUserId() ];
+                    List<ContactPointAddress> shipTolist=[select Id,Name,isDefault,Street, city,state,country from 
+                    ContactPointAddress where ParentId=:myUser.accountId and AddressType='Shipping']; 
+                    return shipTolist;
+                    // 0013C00000fiOefQAE  //:myUser.accountId
+                } catch (Exception e) {
+                    throw new AuraHandledException(e.getMessage());
+                }
+            }
+
+
+            @AuraEnabled(cacheable=true)
+            public static List<ContactPointAddress> getBillToAddress(){
+                try {
+                    //String userid = UserInfo.getUserId();
+                    User myUser=[Select Id,name,accountId  from user Where Id=:UserInfo.getUserId() ];
+                    List<ContactPointAddress> billTolist=[select Id,Name,isDefault,Street, city,state,country from 
+                    ContactPointAddress where ParentId=:myUser.accountId and AddressType='Billing'];
+                    return billTolist;
+                    // '0013C00000fiOefQAE'
+                } catch (Exception e) {
+                    throw new AuraHandledException(e.getMessage());
+                }
+            }
+            @AuraEnabled(cacheable=true)
+    public static ContactPointAddress getAddressById(String contactPointAddressId){
+        try {
+            ContactPointAddress address=[select Id,Name,isDefault,Street, City,State,country,PostalCode from 
+            ContactPointAddress where Id=:contactPointAddressId  Limit 1];
+            return address;
+            
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+
+
+    @AuraEnabled
+    public static String createShipToAddress(String name,String street,String city,String state,
+                                                 String country,String postalCode){
+        User u=[Select Id,name,accountId  from user Where Id=:UserInfo.getUserId()];
+        ContactPointAddress shippingAddress=new ContactPointAddress();
+        // '0053C000004WYhcQAG'
+        shippingAddress.name=name;
+        shippingAddress.street=street;
+        shippingAddress.city=city;
+        shippingAddress.state=state;
+        shippingAddress.country=country;
+        shippingAddress.postalCode=postalCode;
+        shippingAddress.AddressType='Shipping';
+        shippingAddress.ParentId=u.accountId;
+        //'0013C00000fiOefQAE' u.accountId
+        insert shippingAddress;
+        return shippingAddress.id;
+    }
+
+    @AuraEnabled
+
+    public static string updateCartDeliveryAddress(String cartId,String contactPointAddressId){
+
+        try {
+
+            ContactPointAddress shippingAddresslist=[select Id,Name,isDefault,Street, City,State,country,PostalCode from
+
+            ContactPointAddress where Id=:contactPointAddressId and AddressType='Shipping' Limit 1];
+
+            CartDeliveryGroup cartAddress=[select Id,DeliverToName, DeliverToStreet, DeliverToCity, DeliverToState, DeliverToCountry ,DeliverToPostalCode  from
+
+            CartDeliveryGroup where CartId =:cartId LIMIT 1];
+
+            cartAddress.DeliverToName=shippingAddresslist.Name;
+
+            cartAddress.DeliverToStreet=shippingAddresslist.Street;
+
+            cartAddress.DeliverToCity=shippingAddresslist.City;
+
+            cartAddress.DeliverToState=shippingAddresslist.State;
+
+            cartAddress.DeliverToCountry=shippingAddresslist.Country;
+
+            cartAddress.DeliverToPostalCode=shippingAddresslist.PostalCode;
+
+            update cartAddress;
+
+            return 'succesfully updated';
+
+        } catch (Exception e) {
+
+            throw new AuraHandledException(e.getMessage());
+
+        }
+
+    }
+
+
+    @AuraEnabled
+    public static string updateCartDeliveryAddresswithoutId(String cartId,String name,String street,String city,String state,
+    String country,String postalCode){
+        try {
+            CartDeliveryGroup cartAddress=[select Id,DeliverToName, DeliverToStreet, DeliverToCity, DeliverToState, DeliverToCountry ,DeliverToPostalCode  from 
+            CartDeliveryGroup where CartId =:cartId];
+            cartAddress.DeliverToName=name;
+            cartAddress.DeliverToStreet=street;
+            cartAddress.DeliverToCity=city;
+            cartAddress.DeliverToState=state;
+            cartAddress.DeliverToCountry=country;
+            cartAddress.DeliverToPostalCode=postalCode;
+            update cartAddress;
+            return 'succesfully updated';
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+    @AuraEnabled
+
+    public static string updateCartBillingAddress(String cartId,String contactPointAddressId){
+
+        try {
+
+            ContactPointAddress shippingAddresslist=[select Id,Name,isDefault,Street, City,State,country,PostalCode from
+
+            ContactPointAddress where Id=:contactPointAddressId and AddressType='Billing' Limit 1];
+
+            WebCart cartAddress= [select Id ,Name,  BillingStreet, BillingCity, BillingState, BillingCountry,
+
+            BillingPostalCode from WebCart where Id=:cartId limit 1];
+
+            cartAddress.BillingStreet=shippingAddresslist.Street;
+
+            cartAddress.BillingCity=shippingAddresslist.City;
+
+            cartAddress.BillingState=shippingAddresslist.State;
+
+            cartAddress.BillingCountry=shippingAddresslist.Country;
+
+            cartAddress.BillingPostalCode=shippingAddresslist.PostalCode;
+
+            update cartAddress;
+
+            return 'succesfully updated';
+
+           
+
+        } catch (Exception e) {
+
+            throw new AuraHandledException(e.getMessage());
+
+        }
+
+    }
+
+ 
+
+@AuraEnabled(cacheable=true)
+    public static User getBuyerInfo(){
+
+            User u=[Select Id,Name,accountId,email,phone ,Account.Name, Contact.Name, Account.PO_Permission__c from user Where Id=:UserInfo.getUserId()];//:UserInfo.getUserId()   '0053C000004WYhcQAG'];
+            return u;
+    }
+
+
+
+    @AuraEnabled
+    public static WebCart getCartBillingAddress(String cartId){
+       
+            WebCart billTo= [select Id ,Name,  BillingStreet, BillingCity, BillingState, BillingCountry,
+            BillingPostalCode from WebCart where Id=:cartId];
+           return billTo;
+       
+    }
+
+    @AuraEnabled
+    public static CartDeliveryGroup getCartShippingAddress(String cartId){
+       
+            CartDeliveryGroup shipTo= [select Id,DeliverToName, DeliverToStreet, DeliverToCity, DeliverToState, DeliverToCountry ,DeliverToPostalCode  from 
+            CartDeliveryGroup where CartId =:cartId];
+           return shipTo;
+    }
+
+    //updateBillToAddress
+
+    @AuraEnabled
+
+    public static string updateBillToAddress(String cartId,String contactPointAddressId){
+
+        
+
+            ContactPointAddress billToAddlist=[select Id,Name,isDefault,Street, City,State,country,PostalCode from
+
+            ContactPointAddress where Id=:contactPointAddressId and AddressType='Billing' Limit 1];
+
+            WebCart billingCartAddress= [select Id ,Name,  BillingStreet, BillingCity, BillingState, BillingCountry,
+
+            BillingPostalCode from WebCart where Id=:cartId];
+
+            billingCartAddress.BillingStreet=billToAddlist.Street;
+
+            billingCartAddress.BillingCity=billToAddlist.City;
+
+            billingCartAddress.BillingState=billToAddlist.State;
+
+            billingCartAddress.BillingCountry=billToAddlist.Country;
+
+            billingCartAddress.BillingPostalCode=billToAddlist.PostalCode;
+
+            update billingCartAddress;
+
+            return 'Cart Bill to address has succesfully updated';
+
+           
+
+    }
+
+
+    @AuraEnabled
+
+    public static string updateShipToAddress(String cartId,String contactPointAddressId){
+
+        
+
+        ContactPointAddress shippingAddresslist=[select Id,Name,isDefault,Street, City,State,country,PostalCode from
+
+        ContactPointAddress where Id=:contactPointAddressId and AddressType='Shipping' Limit 1];
+
+        CartDeliveryGroup cartAddress=[select Id,DeliverToName, DeliverToStreet, DeliverToCity, DeliverToState, DeliverToCountry ,DeliverToPostalCode  from
+
+        CartDeliveryGroup where CartId =:cartId];
+
+        cartAddress.DeliverToName=shippingAddresslist.Name;
+
+        cartAddress.DeliverToStreet=shippingAddresslist.Street;
+
+        cartAddress.DeliverToCity=shippingAddresslist.City;
+
+        cartAddress.DeliverToState=shippingAddresslist.State;
+
+        cartAddress.DeliverToCountry=shippingAddresslist.Country;
+
+        cartAddress.DeliverToPostalCode=shippingAddresslist.PostalCode;
+
+        update cartAddress;
+
+        
+            return 'Cart Ship to address has succesfully updated';
+
+           
+
+    }
+
+    @AuraEnabled(cacheable=true)
+
+    public static OrderSummary getOrderBillingAddress(String orderId){
+
+        try {
+
+            OrderSummary billTo= [select Id ,BillingStreet, BillingCity, BillingState, BillingCountry,
+
+             BillingPostalCode from OrderSummary  where Id=:orderId];
+
+           return billTo;
+
+        } catch (Exception e) {
+
+            throw new AuraHandledException(e.getMessage());
+
+        }
+
+    }
+
+    @AuraEnabled(cacheable=true)
+
+    public static OrderDeliveryGroupSummary getOrderShippingAddress(String orderId){
+
+        try {
+
+            OrderDeliveryGroupSummary shipTo= [select Id,DeliverToName, DeliverToStreet, DeliverToCity, DeliverToState, DeliverToCountry ,DeliverToPostalCode  from
+
+            OrderDeliveryGroupSummary where OrderSummaryId =:orderId];
+
+            return shipTo;
+
+        } catch (Exception e) {
+
+            throw new AuraHandledException(e.getMessage());
+
+        }
+
+    }
+
+    
+        
+
+}
